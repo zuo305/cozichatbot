@@ -5,27 +5,20 @@
   Ionic pages and navigation.
 -->
 <ion-header>
-
     <ion-navbar>
         <ion-title>{{toUser.name}}</ion-title>
     </ion-navbar>
-
 </ion-header>
-
 <ion-content>
-
     <div class="message-wrap">
-
-        <div *ngFor="let msg of msgList"
-             class="message"
-             [class.left]=" msg.userId === toUser.id "
-             [class.right]=" msg.userId === user.id ">
+        <div *ngFor="let msg of msgList" class="message" [class.left]=" msg.userId === toUser.id " [class.right]=" msg.userId === user.id ">
             <img class="user-img" [src]="msg.userAvatar" alt="" src="">
             <ion-spinner name="dots" *ngIf="msg.status === 'pending'"></ion-spinner>
             <div class="msg-detail">
                 <div class="msg-info">
                     <p>
-                        {{msg.userName}}&nbsp;&nbsp;&nbsp;{{msg.time | relativeTime}}</p>
+                        {{msg.userName}}&nbsp;&nbsp;&nbsp;{{msg.time | relativeTime}}
+                    </p>
                 </div>
                 <div class="msg-content">
                     <span class="triangle"></span>
@@ -33,11 +26,8 @@
                 </div>
             </div>
         </div>
-
     </div>
-
 </ion-content>
-
 <ion-footer no-border [style.height]="showEmojiPicker ? '255px' : '55px'">
     <ion-grid class="input-wrap">
         <ion-row>
@@ -47,11 +37,7 @@
                 </button>
             </ion-col>
             <ion-col col-8>
-                <ion-textarea #chat_input
-                              placeholder="Text Input"
-                              [(ngModel)]="editorMsg"
-                              (keyup.enter)="sendMsg()"
-                              (focus)="onFocus()">
+                <ion-textarea #chat_input placeholder="Text Input" [(ngModel)]="editorMsg" (keyup.enter)="sendMsg()" (focus)="onFocus()">
                 </ion-textarea>
             </ion-col>
             <ion-col col-2>

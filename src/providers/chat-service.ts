@@ -1,7 +1,13 @@
 import { Injectable } from '@angular/core';
-import { Http } from '@angular/http';
 import { Events } from 'ionic-angular';
+
+import { Headers, RequestOptions ,Http, Response ,ResponseOptions} from '@angular/http';
+import { ChatConnectBody } from './message.model';
+import 'rxjs/Rx'
+import { Observable }     from 'rxjs/Observable';
+import 'rxjs/add/operator/catch';
 import 'rxjs/add/operator/toPromise';
+
 
 export class ChatMessage {
     messageId: string;
@@ -23,11 +29,31 @@ export class UserInfo {
 @Injectable()
 export class ChatService {
 
+    private baseUrl: string= "https://directline.botframework.com/v3/directline/conversations";
+    private serect="RiXqDt97Z8g.cwA.u4M.8EV8JSJn0ip62kmfUGh4eYGBPdhfgyHqqpf_MxNTZ7k";  
+
     constructor(public http: Http,
                 public events: Events) {
     }
 
-    mockNewMsg(msg) {
+    getAuthorization() : Observable<ChatConnectBody> 
+    {
+
+    let headers = new Headers({ 'Authorization':'Bearer '+this.serect});
+
+    let options = new RequestOptions({ headers: headers });
+
+    let url = this.baseUrl;
+    console.log(url);
+    return this.http.post(url, null ,options)
+                .map(this.extractData)
+                .finally(() => true)
+                .catch(this.handleError);
+
+
+    }    
+
+    mockNewMsg(text) {
         const mockMsg: ChatMessage = {
             messageId: Date.now().toString(),
             userId: '210000198410281948',
@@ -35,7 +61,7 @@ export class ChatService {
             userAvatar: './assets/to-user.jpg',
             toUserId: '140000198202211138',
             time: Date.now(),
-            message: msg.message,
+            message: text,
             status: 'success'
         };
 
@@ -52,10 +78,38 @@ export class ChatService {
         .catch(err => Promise.reject(err || 'err'));
     }
 
-    sendMsg(msg: ChatMessage) {
-        return new Promise(resolve => setTimeout(() => resolve(msg), Math.random() * 1000))
-        .then(() => this.mockNewMsg(msg));
+    sendMsg(sendRequest,conversationId) {
+         let body = JSON.stringify(sendRequest);
+
+         let headers = new Headers({ 'Authorization':'Bearer '+this.serect});
+         headers.append('Content-Type','application/json');
+
+         let options = new RequestOptions({ headers: headers });
+         let url = `${this.baseUrl}/${conversationId}/activities`;
+         return this.http.post(url, body, options)
+                 .map(this.extractData)
+                 .catch(this.handleError);
+//        return new Promise(resolve => setTimeout(() => resolve(msg), Math.random() * 1000))
+//        .then(
+//            () => this.mockNewMsg(msg)
+//            );
     }
+
+    private extractData(res: Response) {
+
+    let body = res.json();
+    return body || { };
+    }    
+
+     private handleError (error: any) {
+       // In a real world app, we might use a remote logging infrastructure
+       // We'd also dig deeper into the error to get a better message
+
+       let errMsg = (error.message) ? error.message :
+       error.status ? `${error.status} - ${error.statusText}` : 'Server error';
+       console.error(errMsg); // log to console instead
+       return Observable.throw(error);
+     }    
 
     getUserInfo(): Promise<UserInfo> {
         const userInfo: UserInfo = {

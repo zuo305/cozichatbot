@@ -2,6 +2,7 @@ import { Component, ViewChild } from '@angular/core';
 import { IonicPage, NavParams } from 'ionic-angular';
 import { Events, Content, TextInput } from 'ionic-angular';
 import { ChatService, ChatMessage, UserInfo } from "../../providers/chat-service";
+import { ChatConnectBody ,SendRequest ,ChatResponse,ReceiveMessage} from '../../providers/message.model';
 
 @IonicPage()
 @Component({
@@ -17,7 +18,9 @@ export class Chat {
     toUser: UserInfo;
     editorMsg = '';
     showEmojiPicker = false;
-
+    public chatConnectBody : ChatConnectBody = null;    
+    public messageArray = [];
+jjj
     constructor(public navParams: NavParams,
                 public chatService: ChatService,
                 public events: Events,) {
@@ -31,7 +34,78 @@ export class Chat {
         .then((res) => {
             this.user = res
         });
+
+        this.chatService.getAuthorization().timeout(120000).subscribe(result =>  { 
+            console.log(result);
+            this.chatConnectBody= result;
+//            this.receiveMessage();
+            },
+             err => {
+               console.log(err);
+            }
+        );
+
+
     }
+
+
+   receiveMessage() {    
+    var msg = {
+   };
+    let that = this;
+    var exampleSocket = new WebSocket(this.chatConnectBody.streamUrl );
+//    exampleSocket.send(JSON.stringify(msg));
+    exampleSocket.onopen = function (event) {
+    exampleSocket.send("Here's some text that the server is urgently awaiting!"); 
+    };  
+
+    exampleSocket.onerror = function (event) {
+    // that.chatBotService.getAuthorization().timeout(120000).subscribe(result =>  { 
+    //     console.log(result);
+    //     that.chatConnectBody= result;
+    //     },
+    //      err => {
+    //     }
+    // );      
+      console.log(event);      
+    }
+
+    exampleSocket.onmessage = function (event) {
+     console.log(event.data);
+     if(event.data && event.data.length>0)
+     {
+       let receiveMessage : ReceiveMessage = JSON.parse(event.data);
+       if(receiveMessage.activities && receiveMessage.activities.length>0)
+       {
+         let response = receiveMessage.activities[0];//JSON.parse(that.testText);
+         let watermark = receiveMessage.watermark;
+         var gotIt = false;
+
+         for(var i=0;i<that.messageArray.length;i++)
+         {
+           if(watermark==that.messageArray[i].watermark)
+           {
+             gotIt = true;
+             break;
+           }
+         }
+
+         if(gotIt==false)
+         {
+           if(response.from.id=='user1')
+           {
+
+           }
+           else
+           {             
+               that.chatService.mockNewMsg(response.text);
+           }
+         }
+       }
+     }
+    }
+  }
+
 
     ionViewWillLeave() {
         // unsubscribe
@@ -40,10 +114,10 @@ export class Chat {
 
     ionViewDidEnter() {
         //get message list
-        this.getMsg()
-        .then(() => {
-            this.scrollToBottom();
-        });
+        // this.getMsg()
+        // .then(() => {
+        //     this.scrollToBottom();
+        // });
 
         // Subscribe to received  new message events
         this.events.subscribe('chat:received', msg => {
@@ -108,13 +182,32 @@ export class Chat {
             this.messageInput.setFocus();
         }
 
-        this.chatService.sendMsg(newMsg)
-        .then(() => {
+        let sendRequest = new SendRequest();
+        sendRequest.type = 'message';
+        sendRequest.from = {'id': 'user1'};
+        sendRequest.text = newMsg.message;
+
+
+        this.chatService.sendMsg(sendRequest,this.chatConnectBody.conversationId).timeout(120000).subscribe(result =>  { 
+            console.log(result);
             let index = this.getMsgIndexById(id);
             if (index !== -1) {
-                this.msgList[index].status = 'success';
+                this.receiveMessage();
+              this.msgList[index].status = 'success';
             }
-        })
+
+            },
+             err => {
+            }
+          );       
+
+        // this.chatService.sendMsg(sendRequest)
+        // .then(() => {
+        //     let index = this.getMsgIndexById(id);
+        //     if (index !== -1) {
+        //         this.msgList[index].status = 'success';
+        //     }
+        // })
     }
 
     /**
